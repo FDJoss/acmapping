@@ -475,12 +475,14 @@ def make_textures(tex_dir, T):
     out = {}
     S = 1024
 
-    # asphalt: u runs across the road, white edge lines on both sides
-    shade = 0.82 + 0.25 * (fbm(S, rng, 4) - 0.5) + 0.16 * (rng.random((S, S)) - 0.5)
-    shade += (rng.random((S, S)) > 0.985) * 0.35
+    # asphalt: u runs across the road, white edge lines on both sides. One tile spans the whole road width, so
+    # roads over 20 m get a 2048 px texture to keep the grain about 2 cm per pixel.
+    SA = 2048 if T.road_w > 20 else S
+    shade = 0.82 + 0.25 * (fbm(SA, rng, 4) - 0.5) + 0.16 * (rng.random((SA, SA)) - 0.5)
+    shade += (rng.random((SA, SA)) > 0.985) * 0.35
     img = rgba((0.25, 0.25, 0.26), shade)
-    lw = max(4, int(round(0.2 / T.road_w * S)))
-    wear = 0.86 + 0.1 * fbm(S, rng, 16)
+    lw = max(4, int(round(0.2 / T.road_w * SA)))
+    wear = 0.86 + 0.1 * fbm(SA, rng, 16)
     for k in range(3):
         img[:, :lw, k] = wear[:, :lw]
         img[:, -lw:, k] = wear[:, -lw:]
