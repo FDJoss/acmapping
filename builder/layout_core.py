@@ -24,7 +24,7 @@ SPACING = 1.0       # centerline sample spacing (m)
 # planWidth: road width measured from above, so banked sections get a wider tilted surface (see build_track.Track)
 # bankSmooth*: optional smoothing of the banking along the lap (see smooth_banking)
 DEFAULTS = dict(roadWidth=12.0, runoff=15.0, runoffIn=15.0, kerbs=True, gravel=True, pitBoxes=12, pitSide="auto", startPos=0.08,
-                planWidth=True, bankSmooth=False, bankSmoothMode="avg", bankSmoothLen=100.0)
+                planWidth=True, bankSmooth=False, bankSmoothMode="avg", bankSmoothLen=100.0, wallHeight=1.2)
 
 
 MAX_PITS = 60

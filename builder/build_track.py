@@ -44,7 +44,7 @@ sys.path.insert(0, HERE)
 import layout_core  # noqa: E402
 
 # ---------------------------------------------------------------- tuning
-WALL_H = 1.2          # visible wall height (m)
+WALL_H = 1.2          # visible wall height (m) when the layout doesn't set wallHeight
 WALL_T = 0.4          # wall thickness (m)
 WALL_BURY = 1.5       # how far walls reach below the ground, hides the terrain seam (m)
 KERB_HUMP = 0.05      # kerb crown height (m)
@@ -85,6 +85,7 @@ class Track:
         self.hs = self.half / self.cosr if self.plan_width else np.full(self.N, self.half)   # across the surface
         self.E = self.hs * self.cosr                    # horizontal distance from centreline to either road edge
         self.H = self.hs * self.sinr                    # height of the left edge above the centre (right edge: -H)
+        self.wall_h = float(S.get("wallHeight", WALL_H))   # visible height above the ground at its foot
         self.kb = float(S.get("kerbWidth", layout_core.KERB_W))
         self.apron_w = float(S.get("apronWidth", layout_core.APRON_W))
         seg = np.hypot(np.roll(self.x, -1) - self.x, np.roll(self.y, -1) - self.y)
@@ -288,11 +289,11 @@ def build_offroad(T):
 
 def build_walls(T):
     prof = [(0.0, "bottom"), (0.0, "top"), (WALL_T, "top"), (WALL_T, "bottom")]   # (extra a, level) inner->outer
-    span = WALL_BURY + WALL_H
+    span = WALL_BURY + T.wall_h
     for si, sg in ((0, 1.0), (1, -1.0)):
         D = T.D[si]
         base = T.z + sg * T.H - DRAIN * (D - T.E)          # ground level at the foot of the wall (= z_off)
-        top = base + WALL_H
+        top = base + T.wall_h
         # reach below the lowest ground of the corridor: on the high side of banking this becomes a retaining wall
         bottom = np.minimum(base - WALL_BURY, T.z_floor - 1.0)
         order = list(range(4)) if sg < 0 else list(reversed(range(4)))   # columns left to right
@@ -523,15 +524,17 @@ def make_textures(tex_dir, T):
     shade[:, :3] *= 0.6
     out["concrete"] = rgba((0.60, 0.60, 0.58), shade)
 
-    # barrier: v=0 bottom of the buried part, v=1 top of the wall
+    # barrier: v=0 bottom of the buried part, v=1 top of the wall. Grime fades up over the bottom 0.7 m of the
+    # visible wall and the red band is the top 0.27 m, whatever the wall height.
     v = (np.arange(S) + 0.5) / S
-    vis = WALL_BURY / (WALL_BURY + WALL_H)
+    span = WALL_BURY + T.wall_h
+    vis = WALL_BURY / span
     shade = 0.92 + 0.1 * (fbm(S, rng, 8) - 0.5) + 0.06 * (rng.random((S, S)) - 0.5)
-    grime = np.clip((v - vis) / 0.25, 0, 1)[:, None] * 0.45 + 0.55
+    grime = np.clip((v - vis) / (0.7 / span), 0, 1)[:, None] * 0.45 + 0.55
     shade = shade * grime
     shade[:, :4] *= 0.7
     img = rgba((0.72, 0.72, 0.70), shade)
-    band = (v > 0.9)[:, None] & np.ones((1, S), bool)
+    band = (v > 1 - 0.27 / span)[:, None] & np.ones((1, S), bool)
     img[band, 0], img[band, 1], img[band, 2] = 0.75, 0.12, 0.10
     out["barrier"] = img
 
@@ -851,7 +854,7 @@ def write_track_folder(T, lay, track_dir):
         sg = 1.0 if out_si == 0 else -1.0
         dpos = T.D[out_si][i] + WALL_T + 6
         cx, cy = T.xy(i, sg * dpos)
-        cz = T.z_off(i, sg, T.D[out_si][i]) + 6
+        cz = T.z_off(i, sg, T.D[out_si][i]) + max(6.0, T.wall_h + 3)     # stay above tall walls
         tgt = Vector((T.x[i], T.y[i], T.z[i] + 1))
         cam = Vector((cx, cy, cz))
         fwd = (tgt - cam).normalized()

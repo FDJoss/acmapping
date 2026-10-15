@@ -36,6 +36,7 @@ builder\                       the Blender scripts (you don't need to open these
    - **Blank** in "Start from" lets you click out a layout from scratch, point by point, in driving order
    - **Real tracks…** in "Start from" is a menu of real circuits used by NASCAR, INDYCAR, IMSA and F1, grouped by series. Each one's shape is traced from OpenStreetMap, its hills come from terrain survey data (10 m resolution in the USA, 25 m in Europe, 30 m elsewhere), ovals get their published banking, and the start line and pits sit where the real ones are. They come with generic walls, kerbs and run-off rather than the real surroundings. Elevation is smoothed, so small bumps aren't there; Singapore and Mexico City are kept flat because the survey data there is unreliable. If you share a track built from one, credit "© OpenStreetMap contributors".
    - **Outside run-off** and **Infield run-off** set how far the walls are from the track on each side
+   - **Wall height** goes from 0.5 m to 10 m (1.2 m by default). Tall walls stop cars flying out of a fast banked oval. The TV cameras are placed above the walls.
    - **Pit boxes / grid slots** goes up to 60. Above 24 cars, the pit boxes go in two rows side by side, where the apron is wide enough, so the pit area stays a sensible length.
 3. Keep an eye on **Checks** in the right panel. Red items must be fixed before building; amber ones are advice.
 4. Rename the track by clicking its name at the top left, and add your name under **File → Author**.

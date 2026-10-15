@@ -272,6 +272,8 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
         <input type="range" id="runoff" min="1" max="40" step="0.5"></div>
       <div class="row"><label for="runoffIn">Infield run-off</label><span class="val" id="runoffInV"></span>
         <input type="range" id="runoffIn" min="1" max="80" step="0.5"></div>
+      <div class="row"><label for="wallHeight">Wall height</label><span class="val" id="wallHeightV"></span>
+        <input type="range" id="wallHeight" min="0.5" max="10" step="0.1"></div>
       <div class="toggle"><label for="kerbs">Kerbs on corners</label><input type="checkbox" id="kerbs"></div>
       <div class="toggle"><label for="gravel">Gravel traps on fast exits</label><input type="checkbox" id="gravel"></div>
       <div class="row"><label for="startPos">Start / finish line</label><span class="val" id="startPosV"></span>
@@ -354,7 +356,7 @@ const STORE_KEY = 'ac-track-designer-v1';
 // bankSmooth*: optional smoothing of the banking along the lap (see smoothBanking)
 const DEFAULTS = {
   roadWidth: 12, runoff: 15, runoffIn: 15, kerbs: true, gravel: true, pitBoxes: 12, pitSide: 'auto', startPos: 0.08, planWidth: true,
-  bankSmooth: false, bankSmoothMode: 'avg', bankSmoothLen: 100,
+  bankSmooth: false, bankSmoothMode: 'avg', bankSmoothLen: 100, wallHeight: 1.2,
 };
 const MAX_PITS = 60;
 // Big fields (over 24 cars) get two rows of pit boxes and a tighter grid, so the pit area stays a sensible length.
@@ -1410,6 +1412,7 @@ function syncInputs() {
   $('#roadWidth').value = S.roadWidth; $('#roadWidthV').textContent = U.setting(S.roadWidth);
   $('#runoff').value = S.runoff; $('#runoffV').textContent = U.setting(S.runoff);
   $('#runoffIn').value = S.runoffIn; $('#runoffInV').textContent = U.setting(S.runoffIn);
+  $('#wallHeight').value = S.wallHeight; $('#wallHeightV').textContent = U.short(S.wallHeight, 1);
   $('#kerbs').checked = !!S.kerbs; $('#gravel').checked = !!S.gravel; $('#planWidth').checked = !!S.planWidth;
   showBankSmooth(S);
   $('#startPos').value = S.startPos; $('#startPosV').textContent = Math.round(S.startPos * 100) + '%';
@@ -1651,6 +1654,7 @@ function bindSetting(id, parse, label) {
 bindSetting('roadWidth', (el) => +el.value, U.setting);
 bindSetting('runoff', (el) => +el.value, U.setting);
 bindSetting('runoffIn', (el) => +el.value, U.setting);
+bindSetting('wallHeight', (el) => +el.value, (v) => U.short(v, 1));
 bindSetting('startPos', (el) => +el.value, (v) => Math.round(v * 100) + '%');
 bindSetting('kerbs', (el) => el.checked);
 bindSetting('gravel', (el) => el.checked);
