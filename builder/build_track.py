@@ -79,9 +79,12 @@ class Track:
         self.flags = a[:, 6].astype(np.int64)
         self.road_w = float(S.get("roadWidth", 12))
         self.half = self.road_w / 2
-        # banking tilts the road surface, so its edges come in horizontally and move up/down
-        self.E = self.half * self.cosr                  # horizontal distance from centreline to either road edge
-        self.H = self.half * self.sinr                  # height of the left edge above the centre (right edge: -H)
+        # Banking tilts the road surface. With planWidth (the default) the width is measured from above, so a banked
+        # surface is wider and its edges stay at ±half; otherwise the surface is road_w across and the edges come in.
+        self.plan_width = bool(S.get("planWidth", True))
+        self.hs = self.half / self.cosr if self.plan_width else np.full(self.N, self.half)   # across the surface
+        self.E = self.hs * self.cosr                    # horizontal distance from centreline to either road edge
+        self.H = self.hs * self.sinr                    # height of the left edge above the centre (right edge: -H)
         self.kb = float(S.get("kerbWidth", layout_core.KERB_W))
         self.apron_w = float(S.get("apronWidth", layout_core.APRON_W))
         seg = np.hypot(np.roll(self.x, -1) - self.x, np.roll(self.y, -1) - self.y)
@@ -149,13 +152,15 @@ class Track:
         return self.z[i] + sg * self.H[i] - DRAIN * (a - self.E[i])
 
     def lat_pt(self, i, d):
-        """Point at lateral position d (+ = left). Up to the road edge d is measured along the banked surface;
-        beyond the edge it carries on horizontally across the ground."""
+        """Point at lateral position d (+ = left) in layout units, where the road edges are at ±half (spawn points
+        and pit boxes come from the designer this way). Across the road d is stretched onto the banked surface
+        (hs[i] either side); beyond the edge it carries on horizontally across the ground."""
         sg = 1.0 if d >= 0 else -1.0
         a = abs(d)
         if a <= self.half:
-            x, y = self.xy(i, d * self.cosr[i])
-            return x, y, self.z[i] + d * self.sinr[i]
+            s = d * self.hs[i] / self.half
+            x, y = self.xy(i, s * self.cosr[i])
+            return x, y, self.z[i] + s * self.sinr[i]
         ha = self.E[i] + (a - self.half)
         x, y = self.xy(i, sg * ha)
         return x, y, self.z_off(i, sg, ha)
@@ -787,8 +792,8 @@ def write_track_folder(T, lay, track_dir):
 
     # ---- map.png / map.ini (1 px per metre, like Kunos' maps) ----
     margin = 20
-    ex = np.concatenate([T.x + T.nx * T.half, T.x - T.nx * T.half])
-    ey = np.concatenate([T.y + T.ny * T.half, T.y - T.ny * T.half])
+    ex = np.concatenate([T.x + T.nx * T.E, T.x - T.nx * T.E])         # road edges seen from above
+    ey = np.concatenate([T.y + T.ny * T.E, T.y - T.ny * T.E])
     xmin, xmax = ex.min(), ex.max()
     zmin_ac, zmax_ac = -ey.max(), -ey.min()
     scale = max(1.0, max(xmax - xmin, zmax_ac - zmin_ac) / (1600 - 2 * margin))
@@ -796,9 +801,9 @@ def write_track_folder(T, lay, track_dir):
     H = int(math.ceil((zmax_ac - zmin_ac) / scale + 2 * margin))
     x_off, z_off = -xmin + margin * scale, -zmin_ac + margin * scale
     to_map = lambda x, y: ((x + x_off) / scale, (-y + z_off) / scale)
-    cen = lambda r: (lambda i: (T.x[i], T.y[i], r / scale))
-    arr = raster(T, W, H, to_map, [(cen(T.half + 2.5), (0.05, 0.05, 0.05, 0.75), None),
-                                  (cen(T.half), (1, 1, 1, 0.95), None)], ss=2)
+    cen = lambda extra: (lambda i: (T.x[i], T.y[i], (T.E[i] + extra) / scale))
+    arr = raster(T, W, H, to_map, [(cen(2.5), (0.05, 0.05, 0.05, 0.75), None),
+                                  (cen(0.0), (1, 1, 1, 0.95), None)], ss=2)
     save_top_down_png(arr, os.path.join(track_dir, "map.png"), "ui_map")
     with open(os.path.join(track_dir, "data", "map.ini"), "w", encoding="utf-8") as fh:
         fh.write(f"[PARAMETERS]\nWIDTH={W}\nHEIGHT={H}\nMARGIN={margin}\nSCALE_FACTOR={scale:g}\n"
@@ -829,8 +834,8 @@ def write_track_folder(T, lay, track_dir):
     kerb_any = (T.flags & 3) > 0
     arr = raster(T, pw, ph, to_prev, [
         (mid, (0.64, 0.77, 0.47, 1), None),
-        (lambda i: (T.x[i], T.y[i], (T.half + T.kb) * k), (0.83, 0.2, 0.2, 1), kerb_any),
-        (lambda i: (T.x[i], T.y[i], max(T.half * k, 0.9)), (0.2, 0.21, 0.23, 1), None),
+        (lambda i: (T.x[i], T.y[i], (T.E[i] + T.kb) * k), (0.83, 0.2, 0.2, 1), kerb_any),
+        (lambda i: (T.x[i], T.y[i], max(T.E[i] * k, 0.9)), (0.2, 0.21, 0.23, 1), None),
     ], ss=4, bg=(0.47, 0.64, 0.33, 1))
     save_top_down_png(arr, os.path.join(track_dir, "ui", "preview.png"), "ui_preview")
 

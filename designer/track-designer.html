@@ -78,6 +78,8 @@ header.top {
 .seg button { border: 0; border-radius: 0; padding: 6px 10px; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg.full { display: flex; width: 100%; margin: 2px 0 6px; }
+.seg.full button { flex: 1; padding: 5px 4px; font-size: 13px; }
 
 /* ---------- main grid ---------- */
 main.layout {
@@ -169,8 +171,8 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
 .l-apron { fill: var(--apron); }
 .l-kerbw { fill: none; stroke: #f4f4f4; stroke-linejoin: round; }
 .l-kerbr { fill: none; stroke: var(--kerb); stroke-linejoin: round; }
-.l-edge { fill: none; stroke: var(--edge); stroke-linejoin: round; }
-.l-road { fill: none; stroke: var(--road); stroke-linejoin: round; }
+.f-edge { fill: var(--edge); fill-rule: evenodd; }
+.f-road { fill: var(--road); fill-rule: evenodd; }
 .l-mark { stroke: #f4f4f4; }
 .l-chev { fill: none; stroke: var(--chev); stroke-linecap: round; stroke-linejoin: round; }
 .l-warn { fill: none; stroke: var(--err); }
@@ -256,6 +258,16 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
       <h3>Track</h3>
       <div class="row"><label for="roadWidth">Road width</label><span class="val" id="roadWidthV"></span>
         <input type="range" id="roadWidth" min="8" max="20" step="0.5"></div>
+      <div class="toggle" title="On: a banked road is tilted and made wider, so from above it is as wide as the straights. Off: the road is this wide across its tilted surface, so steep banking looks narrower from above."><label for="planWidth">Banked turns as wide as the straights</label><input type="checkbox" id="planWidth"></div>
+      <div class="toggle" title="Smooths the banking along the lap, so it builds up and eases off gradually between your points"><label for="bankSmooth">Auto-smooth banking</label><input type="checkbox" id="bankSmooth"></div>
+      <div id="bankSmoothOpts">
+        <div class="seg full" role="group" aria-label="How to smooth the banking">
+          <button data-bsm="avg">Average</button><button data-bsm="high">Keep highest</button><button data-bsm="low">Keep lowest</button>
+        </div>
+        <div class="muted" id="bankSmoothHelp"></div>
+        <div class="row"><label for="bankSmoothLen">Smoothing distance</label><span class="val" id="bankSmoothLenV"></span>
+          <input type="range" id="bankSmoothLen" min="20" max="400" step="10"></div>
+      </div>
       <div class="row"><label for="runoff">Outside run-off (grass to wall)</label><span class="val" id="runoffV"></span>
         <input type="range" id="runoff" min="1" max="40" step="0.5"></div>
       <div class="row"><label for="runoffIn">Infield run-off</label><span class="val" id="runoffInV"></span>
@@ -337,7 +349,13 @@ const GRAVEL_R = 110;      // corners tighter than this get gravel on the outsid
 const SPACING = 1.0;       // centerline sample spacing (m)
 const STORE_KEY = 'ac-track-designer-v1';
 
-const DEFAULTS = { roadWidth: 12, runoff: 15, runoffIn: 15, kerbs: true, gravel: true, pitBoxes: 12, pitSide: 'auto', startPos: 0.08 };
+// planWidth: road width is measured from above, so banked sections get a wider (tilted) surface to cover it.
+// Off: the width is measured across the surface, and steep banking looks narrower from above.
+// bankSmooth*: optional smoothing of the banking along the lap (see smoothBanking)
+const DEFAULTS = {
+  roadWidth: 12, runoff: 15, runoffIn: 15, kerbs: true, gravel: true, pitBoxes: 12, pitSide: 'auto', startPos: 0.08, planWidth: true,
+  bankSmooth: false, bankSmoothMode: 'avg', bankSmoothLen: 100,
+};
 const MAX_PITS = 60;
 // Big fields (over 24 cars) get two rows of pit boxes and a tighter grid, so the pit area stays a sensible length.
 // Two-row aprons get 20% spare length for spots where the apron is too narrow for two cars side by side.
@@ -644,6 +662,44 @@ function removeShort(a, minLen) {
   for (const [s, len] of runs(a)) if (len < minLen && len < a.length) for (let k = 0; k < len; k++) a[ci(s + k, a.length)] = 0;
   return a;
 }
+// running-sum average over ±r samples round the lap (O(N), it runs on every drag frame)
+function boxCirc(a, r) {
+  const N = a.length, out = new Float64Array(N), w = 2 * r + 1;
+  let sum = 0;
+  for (let k = -r; k <= r; k++) sum += a[ci(k, N)];
+  for (let i = 0; i < N; i++) { out[i] = sum / w; sum += a[ci(i + r + 1, N)] - a[ci(i - r, N)]; }
+  return out;
+}
+// highest (or lowest) value within ±r samples round the lap, with a sliding-window queue
+function extremeCirc(a, r, useMax) {
+  const N = a.length, out = new Float64Array(N), q = [];
+  let head = 0;
+  for (let k = -r; k < N + r; k++) {
+    const v = a[ci(k, N)];
+    while (q.length > head && (useMax ? v >= a[ci(q[q.length - 1], N)] : v <= a[ci(q[q.length - 1], N)])) q.pop();
+    q.push(k);
+    const i = k - r;                                 // the window [i - r, i + r] is now complete
+    if (i >= 0) { while (q[head] < i - r) head++; out[i] = a[ci(q[head], N)]; }
+  }
+  return out;
+}
+// Auto-smooth banking over `bankSmoothLen` metres. 'avg' blends with the neighbours; 'high' spreads the steepest
+// angle outward first, so no point ever loses banking; 'low' spreads the flattest first, so none ever gains any.
+// Left- and right-leaning banking are smoothed separately, so 'high'/'low' compare angles rather than signed rolls.
+function smoothBanking(roll, h, S) {
+  const N = roll.length, R = Math.min(Math.floor((N - 1) / 2), Math.round(S.bankSmoothLen / 2 / h));
+  if (!S.bankSmooth || R < 2) return roll;
+  const r = Math.floor(R / 2);                       // two averaging passes of ±R/2 reach ±R, like the spread
+  const side = (sign) => {
+    let a = Float64Array.from(roll, (v) => Math.max(0, sign * v));
+    // spreading the steepest angle stops where the road leans the other way, so S-bends don't flip direction
+    if (S.bankSmoothMode === 'high') a = extremeCirc(a, R, true).map((v, i) => (sign * roll[i] < 0 ? 0 : v));
+    else if (S.bankSmoothMode === 'low') a = extremeCirc(a, R, false);
+    return boxCirc(boxCirc(a, r), r);
+  };
+  const up = side(1), down = side(-1);
+  return Float64Array.from(up, (v, i) => v - down[i]);
+}
 function segIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
   const d1 = (dx - cx) * (ay - cy) - (dy - cy) * (ax - cx);
   const d2 = (dx - cx) * (by - cy) - (dy - cy) * (bx - cx);
@@ -658,6 +714,7 @@ function compute() {
   if (doc.points.length < 3) return { ok: false, S };
   const m = buildCenterline(doc.points, S.startPos);
   m.S = S;
+  m.roll = smoothBanking(m.roll, m.h, S);
   const { N, h, x, y, z } = m;
   const nx = new Float64Array(N), ny = new Float64Array(N), hd = new Float64Array(N), kap = new Float64Array(N);
   for (let i = 0; i < N; i++) {
@@ -772,7 +829,14 @@ function compute() {
     flags[i] = (kerb[0][i] ? 1 : 0) | (kerb[1][i] ? 2 : 0) | (grav[0][i] ? 4 : 0) | (grav[1][i] ? 8 : 0) |
       ((pitSi === 0 && inPit[i]) ? 16 : 0) | ((pitSi === 1 && inPit[i]) ? 32 : 0);
   }
-  Object.assign(m, { D, kerb, grav, flags, pitSi, inPit, half });
+  // road edge seen from above (E) and its height above the centre on the high side (H), as the builder makes them
+  const E = new Float64Array(N), Hgt = new Float64Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = Math.abs(m.roll[i]) * Math.PI / 180;
+    E[i] = S.planWidth ? half : half * Math.cos(r);
+    Hgt[i] = S.planWidth ? half * Math.tan(r) : half * Math.sin(r);
+  }
+  Object.assign(m, { D, kerb, grav, flags, pitSi, inPit, half, E, Hgt });
 
   // ---- spawn points & timing gates (index along centerline + lateral offset, + = left) ----
   const objects = [];
@@ -842,12 +906,11 @@ function compute() {
   {
     let twist = 0, twistAt = 0, steep = 0, steepAt = 0;
     for (let i = 0; i < N; i++) {
-      const r0 = m.roll[i] * Math.PI / 180, r1 = m.roll[ci(i + 1, N)] * Math.PI / 180;
-      const tw = half * Math.abs(Math.sin(r1) - Math.sin(r0)) / h;
+      const j = ci(i + 1, N), tw = Math.abs(Math.sign(m.roll[j]) * Hgt[j] - Math.sign(m.roll[i]) * Hgt[i]) / h;
       if (tw > twist) { twist = tw; twistAt = i; }
       if (Math.abs(m.roll[i]) > steep) { steep = Math.abs(m.roll[i]); steepAt = i; }
     }
-    if (twist > 0.08) warnings.push({ level: 'warn', at: twistAt, text: `The banking changes very quickly here: the road edge rises ${imperial ? (twist * 30).toFixed(1) + ' ft every 30 ft' : (twist * 10).toFixed(1) + ' m every 10 m'}. Spread the banked points out or add a point with in-between banking.` });
+    if (twist > 0.08) warnings.push({ level: 'warn', at: twistAt, text: `The banking changes very quickly here: the road edge rises ${imperial ? (twist * 30).toFixed(1) + ' ft every 30 ft' : (twist * 10).toFixed(1) + ' m every 10 m'}. Spread the banked points out or add a point with in-between banking${S.bankSmooth ? ', or raise the smoothing distance' : ', or turn on Auto-smooth banking'}.` });
     if (steep > 30) warnings.push({ level: 'info', at: steepAt, text: `Banking reaches ${steep.toFixed(0)}°. Above about 30° slow cars can slide down the slope, so keep the grid and pits flat.` });
   }
   if (m.L < 600) warnings.push({ level: 'info', text: `Very short lap. Fine for testing, but most circuits are ${imperial ? '1.2–3.7 miles' : '2–6 km'}.` });
@@ -939,6 +1002,12 @@ function bandPoly(m, sign, dIn, dOut, idxs) {
   const back = offsetPts(m, sign, dOut, idxs.slice().reverse());
   return fwd + back;
 }
+// Layout offsets (spawn points, pit boxes) put the road edge at ±half. Seen from above the edge is at ±E[i],
+// which is narrower on banking when the width is measured across the surface; beyond the edge offsets carry on as-is.
+function lay2h(m, i, d) {
+  const a = Math.abs(d), sg = d < 0 ? -1 : 1;
+  return a <= m.half ? d * m.E[i] / m.half : sg * (m.E[i] + a - m.half);
+}
 
 function render() {
   const W = mapEl.clientWidth || 800, H = mapEl.clientHeight || 600;
@@ -966,21 +1035,23 @@ function render() {
 
   const m = model;
   if (m && m.ok) {
-    const N = m.N, all = rangeIdx(0, N, N), half = m.half, S = m.S;
+    // everything is drawn as seen from above: the road edge is at E[i] (narrower on banking unless the width is
+    // measured from above), and kerbs, gravel and the pit apron start from that edge, as in the builder
+    const N = m.N, all = rangeIdx(0, N, N), half = m.half, E = m.E;
     const leftWall = offsetPts(m, 1, (i) => m.D[0][i], all), rightWall = offsetPts(m, -1, (i) => m.D[1][i], all);
     s += `<path class="l-runoff" d="M${leftWall}Z M${rightWall}Z"/>`;
     // gravel
     for (let si = 0; si < 2; si++) {
       const sign = si === 0 ? 1 : -1;
       for (const [st, len] of runs(m.grav[si])) {
-        s += `<polygon class="l-gravel" points="${bandPoly(m, sign, () => half + KERB_W + 3, (i) => m.D[si][i] - 0.4, rangeIdx(st, len + 1, N))}"/>`;
+        s += `<polygon class="l-gravel" points="${bandPoly(m, sign, (i) => E[i] + KERB_W + 3, (i) => m.D[si][i] - 0.4, rangeIdx(st, len + 1, N))}"/>`;
       }
     }
     // pit apron
     {
       const si = m.pitSi, sign = si === 0 ? 1 : -1;
       for (const [st, len] of runs(m.inPit)) {
-        s += `<polygon class="l-apron" points="${bandPoly(m, sign, () => half, (i) => half + Math.min(APRON_W, m.D[si][i] - half - 1), rangeIdx(st, len + 1, N))}"/>`;
+        s += `<polygon class="l-apron" points="${bandPoly(m, sign, (i) => E[i], (i) => E[i] + Math.min(APRON_W, m.D[si][i] - E[i] - 1), rangeIdx(st, len + 1, N))}"/>`;
       }
     }
     const wallW = Math.max(0.8, 1.5 * px);
@@ -989,20 +1060,20 @@ function render() {
     for (let si = 0; si < 2; si++) {
       const sign = si === 0 ? 1 : -1;
       for (const [st, len] of runs(m.kerb[si])) {
-        const pts = offsetPts(m, sign, () => half + KERB_W / 2, rangeIdx(st, len + 1, N));
+        const pts = offsetPts(m, sign, (i) => E[i] + KERB_W / 2, rangeIdx(st, len + 1, N));
         s += `<polyline class="l-kerbw" points="${pts}" stroke-width="${KERB_W}"/>`;
         s += `<polyline class="l-kerbr" points="${pts}" stroke-width="${KERB_W}" stroke-dasharray="1 1"/>`;
       }
     }
-    // road
-    const roadPts = polyStr(m.x, m.y, all);
-    s += `<polygon class="l-edge" points="${roadPts}" stroke-width="${S.roadWidth}"/>`;
-    s += `<polygon class="l-road" points="${roadPts}" stroke-width="${S.roadWidth - 0.5}"/>`;
+    // road: the band between the two edges, with a thin white line along each edge
+    const band = (inset) => `M${offsetPts(m, 1, (i) => E[i] - inset, all)}Z M${offsetPts(m, -1, (i) => E[i] - inset, all)}Z`;
+    s += `<path class="f-edge" d="${band(0)}"/>`;
+    s += `<path class="f-road" d="${band(0.25)}"/>`;
     // start/finish line
     {
       const a = (d) => `${f2(m.x[0] + m.nx[0] * d)},${f2(m.y[0] + m.ny[0] * d)}`;
-      s += `<polyline points="${a(half)} ${a(-half)}" stroke="#fff" stroke-width="1.6"/>`;
-      s += `<polyline points="${a(half)} ${a(-half)}" stroke="#111" stroke-width="1.6" stroke-dasharray="0.8 0.8"/>`;
+      s += `<polyline points="${a(E[0])} ${a(-E[0])}" stroke="#fff" stroke-width="1.6"/>`;
+      s += `<polyline points="${a(E[0])} ${a(-E[0])}" stroke="#111" stroke-width="1.6" stroke-dasharray="0.8 0.8"/>`;
     }
     // grid slots & pit boxes (only when zoomed in enough to see them)
     if (sc > 0.9) {
@@ -1010,7 +1081,8 @@ function render() {
         if (!o.name.startsWith('AC_START_') && !o.name.startsWith('AC_PIT_')) continue;
         const i = o.i, w = o.name.startsWith('AC_PIT_') ? 3.5 : 2.4;
         const fx = -m.ny[i], fy = m.nx[i];   // forward direction
-        const cx = m.x[i] + m.nx[i] * o.offset + fx * 2.6, cy = m.y[i] + m.ny[i] * o.offset + fy * 2.6;
+        const off = lay2h(m, i, o.offset);
+        const cx = m.x[i] + m.nx[i] * off + fx * 2.6, cy = m.y[i] + m.ny[i] * off + fy * 2.6;
         s += `<line class="l-mark" x1="${f2(cx + m.nx[i] * w / 2)}" y1="${f2(cy + m.ny[i] * w / 2)}" x2="${f2(cx - m.nx[i] * w / 2)}" y2="${f2(cy - m.ny[i] * w / 2)}" stroke-width="0.3"/>`;
       }
     }
@@ -1200,6 +1272,11 @@ function nudgeBank(d) {
   const stopped = want.filter((b, k) => b !== next[k]).length;
   if (stopped && idx.length > 1) toast(`${stopped} of ${idx.length} points stopped at ${d > 0 ? BANK_MAX : 0}°`);
 }
+// banking the road actually gets at point i once auto-smooth has been applied (null while smoothing is off)
+function smoothedBankAt(i) {
+  if (!model || !model.ok || !model.S.bankSmooth) return null;
+  return Math.abs(model.roll[ci(Math.round(model.ptRel[i] / model.h), model.N)]);
+}
 function setBankAll(v) {
   pushUndo();
   for (const i of selSet) doc.points[i].bank = v;
@@ -1223,6 +1300,7 @@ function renderSel() {
     ${stepperHtml('z')}
     <div class="row" style="margin-top:12px"><label for="selB">Banking (outside up)</label><span class="val" id="selBv">${(p.bank || 0).toFixed(1)}°</span>
       <input type="range" id="selB" min="0" max="${BANK_MAX}" step="0.5" value="${p.bank || 0}"></div>
+    ${smoothedBankAt(sel) !== null ? `<div class="muted">After auto-smooth: ${fmtBank(smoothedBankAt(sel))}</div>` : ''}
     ${stepperHtml('b')}
     <div class="btnrow" style="margin-top:10px">
       <button id="selPrev" title="Previous point">‹ Prev</button>
@@ -1266,6 +1344,11 @@ function renderMultiSel(body) {
       <button id="selZallGo">Set</button></div>
     <div class="selsec">
       <div class="row"><label>Banking (outside up)</label><span class="val">${bs.same ? fmtBank(bs.lo) : `${fmtBank(bs.lo)} to ${fmtBank(bs.hi)}`}</span></div>
+      ${(() => {
+        if (smoothedBankAt(sel) === null) return '';
+        const sm = spread(idx.map(smoothedBankAt));
+        return `<div class="muted">After auto-smooth: ${sm.same ? fmtBank(sm.lo) : `${fmtBank(sm.lo)} to ${fmtBank(sm.hi)}`}</div>`;
+      })()}
       ${bs.same ? '' : `<div class="warn warn selwarn">These points have different banking. + and − move them all by the same amount, so the differences stay. To give them all the same angle, use <b>Set all</b> below.${list}</div>`}
       ${stepperHtml('b')}
       <div class="setall"><label for="selBall">Set all to</label>
@@ -1307,13 +1390,28 @@ function changed() {
   $('#slug').textContent = folderName();
   store(STORE_KEY, snapshot());
 }
+const BANK_SMOOTH_HELP = {
+  avg: 'Blends each spot with its neighbours: the steepest parts come down a little and the flattest come up.',
+  high: 'Never lowers the banking: steep sections keep their full angle and the build-up starts earlier.',
+  low: 'Never raises the banking: flatter sections keep their angle and the build-up starts later, inside the turn.',
+};
+function showBankSmooth(S) {
+  $('#bankSmoothOpts').hidden = !S.bankSmooth;
+  document.querySelectorAll('[data-bsm]').forEach((b) => {
+    const on = b.dataset.bsm === S.bankSmoothMode;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+  });
+  $('#bankSmoothHelp').textContent = BANK_SMOOTH_HELP[S.bankSmoothMode] || '';
+  $('#bankSmoothLen').value = S.bankSmoothLen; $('#bankSmoothLenV').textContent = U.setting(S.bankSmoothLen);
+}
 function syncInputs() {
   const S = normSettings(doc.settings);
   $('#trackName').value = doc.name; $('#author').value = doc.author || '';
   $('#roadWidth').value = S.roadWidth; $('#roadWidthV').textContent = U.setting(S.roadWidth);
   $('#runoff').value = S.runoff; $('#runoffV').textContent = U.setting(S.runoff);
   $('#runoffIn').value = S.runoffIn; $('#runoffInV').textContent = U.setting(S.runoffIn);
-  $('#kerbs').checked = !!S.kerbs; $('#gravel').checked = !!S.gravel;
+  $('#kerbs').checked = !!S.kerbs; $('#gravel').checked = !!S.gravel; $('#planWidth').checked = !!S.planWidth;
+  showBankSmooth(S);
   $('#startPos').value = S.startPos; $('#startPosV').textContent = Math.round(S.startPos * 100) + '%';
   $('#pitBoxes').value = S.pitBoxes; $('#pitSide').value = S.pitSide;
 }
@@ -1556,6 +1654,14 @@ bindSetting('runoffIn', (el) => +el.value, U.setting);
 bindSetting('startPos', (el) => +el.value, (v) => Math.round(v * 100) + '%');
 bindSetting('kerbs', (el) => el.checked);
 bindSetting('gravel', (el) => el.checked);
+bindSetting('planWidth', (el) => el.checked);
+bindSetting('bankSmooth', (el) => el.checked);
+bindSetting('bankSmoothLen', (el) => +el.value, U.setting);
+$('#bankSmooth').addEventListener('change', () => showBankSmooth(normSettings(doc.settings)));
+document.querySelectorAll('[data-bsm]').forEach((b) => b.addEventListener('click', () => {
+  if (doc.settings.bankSmoothMode === b.dataset.bsm) return;
+  pushUndo(); doc.settings.bankSmoothMode = b.dataset.bsm; showBankSmooth(normSettings(doc.settings)); changed();
+}));
 bindSetting('pitBoxes', (el) => clamp(Math.round(+el.value) || 2, 2, MAX_PITS));
 bindSetting('pitSide', (el) => el.value);
 

@@ -8,6 +8,7 @@ builder accept hand-written or points-only layout files. Keep it in sync with th
 Runs on plain Python 3 (no Blender needed):
     python layout_core.py some.layout.json    -> prints the stats
 """
+import collections
 import json
 import math
 import re
@@ -20,7 +21,10 @@ KERB_R = 120.0      # corners tighter than this get kerbs (m)
 GRAVEL_R = 110.0    # corners tighter than this get gravel on the outside (m)
 SPACING = 1.0       # centerline sample spacing (m)
 
-DEFAULTS = dict(roadWidth=12.0, runoff=15.0, runoffIn=15.0, kerbs=True, gravel=True, pitBoxes=12, pitSide="auto", startPos=0.08)
+# planWidth: road width measured from above, so banked sections get a wider tilted surface (see build_track.Track)
+# bankSmooth*: optional smoothing of the banking along the lap (see smooth_banking)
+DEFAULTS = dict(roadWidth=12.0, runoff=15.0, runoffIn=15.0, kerbs=True, gravel=True, pitBoxes=12, pitSide="auto", startPos=0.08,
+                planWidth=True, bankSmooth=False, bankSmoothMode="avg", bankSmoothLen=100.0)
 
 
 MAX_PITS = 60
@@ -161,6 +165,57 @@ def dilate(a, before, after):
     return out
 
 
+def box_circ(a, r):
+    """Running-sum average over ±r samples round the lap."""
+    n, w = len(a), 2 * r + 1
+    s = sum(a[k % n] for k in range(-r, r + 1))
+    out = [0.0] * n
+    for i in range(n):
+        out[i] = s / w
+        s += a[(i + r + 1) % n] - a[(i - r) % n]
+    return out
+
+
+def extreme_circ(a, r, use_max):
+    """Highest (or lowest) value within ±r samples round the lap, with a sliding-window queue."""
+    n = len(a)
+    out, q = [0.0] * n, collections.deque()
+    for k in range(-r, n + r):
+        v = a[k % n]
+        while q and (v >= a[q[-1] % n] if use_max else v <= a[q[-1] % n]):
+            q.pop()
+        q.append(k)
+        i = k - r
+        if i >= 0:
+            while q[0] < i - r:
+                q.popleft()
+            out[i] = a[q[0] % n]
+    return out
+
+
+def smooth_banking(roll, h, S):
+    """Port of the designer's smoothBanking(): 'avg' blends with the neighbours, 'high' spreads the steepest angle
+    outward first (no point loses banking), 'low' spreads the flattest first (no point gains any). Left- and
+    right-leaning banking are smoothed separately so 'high'/'low' compare angles, not signed rolls."""
+    n = len(roll)
+    R = min((n - 1) // 2, math.floor(S["bankSmoothLen"] / 2 / h + 0.5))      # Math.round, as in the designer
+    if not S["bankSmooth"] or R < 2:
+        return roll
+    r = R // 2
+
+    def side(sign):
+        a = [max(0.0, sign * v) for v in roll]
+        if S["bankSmoothMode"] == "high":
+            # spreading the steepest angle stops where the road leans the other way, so S-bends don't flip direction
+            a = [0.0 if sign * rv < 0 else v for v, rv in zip(extreme_circ(a, R, True), roll)]
+        elif S["bankSmoothMode"] == "low":
+            a = extreme_circ(a, R, False)
+        return box_circ(box_circ(a, r), r)
+
+    up, down = side(1.0), side(-1.0)
+    return [u - d for u, d in zip(up, down)]
+
+
 def runs(a):
     """Circular runs of truthy values as (start, length)."""
     n = len(a)
@@ -194,6 +249,7 @@ def compute(doc):
     if len(pts) < 3:
         raise ValueError("a layout needs at least 3 points")
     m = build_centerline(pts, S["startPos"])
+    m["roll"] = smooth_banking(m["roll"], m["h"], S)
     N, h, x, y, z = m["N"], m["h"], m["x"], m["y"], m["z"]
     nx, ny, hd, kap = [0.0] * N, [0.0] * N, [0.0] * N, [0.0] * N
     for i in range(N):

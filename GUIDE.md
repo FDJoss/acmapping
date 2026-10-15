@@ -22,6 +22,13 @@ builder\                       the Blender scripts (you don't need to open these
    - double-click the road to add a point, right-click a point to delete it
    - drag the dots in the **Elevation** chart up and down to make hills
    - click a point in a corner and raise **Banking** to tilt it (up to 45°; give steep banking a few points to build up gradually)
+   - **Banked turns as wide as the straights** (on by default) keeps the road the same width seen from above. Banked sections are tilted, so their surface is a bit wider: a 20 m road on 38° banking measures 25.4 m across the tilted surface. Turn it off if you want the road width measured across the surface instead, as real tracks quote it. Steep turns then look narrower from above (15.8 m for that 20 m road at 38°). The map always shows the real top-down width.
+   - **Auto-smooth banking** makes the banking build up and ease off gradually, instead of point to point. Pick how:
+     - **Average** blends each spot with its neighbours, so the steepest parts come down a little and the flattest come up.
+     - **Keep highest** never lowers the banking: steep turns keep their full angle and the build-up starts earlier.
+     - **Keep lowest** never raises it: flatter parts keep their angle and the build-up starts later.
+
+     **Smoothing distance** is how long the build-up takes. Your points keep the angles you typed. When a point is selected, the panel also shows "After auto-smooth" with the angle the road actually gets there. Where the road switches from leaning one way to the other (an S-bend banked both ways), the banking passes through flat, so Keep highest lowers it slightly right at the switch.
    - to change a whole stretch at once, select several points: **Ctrl+click** them one by one, **Shift+click** to take every point between the last one and this one, or hold **Shift** and drag a box around them (**Ctrl+A** selects all). This works on the map and on the Elevation chart. The panel then has two sets of buttons:
      - **Elevation**: −/+ buttons (5 m and 1 m, or 10 ft and 1 ft) raise or lower every selected point by the same amount, so hills keep their shape. **Set all to** puts them all at one height, which makes that stretch level.
      - **Banking**: **−5° −1° +1° +5°** change every selected point by the same amount, and **Set all to** gives them one angle. If the points don't all have the same banking, a yellow note says so and lists each point's angle.
