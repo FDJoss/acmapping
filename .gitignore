@@ -1,0 +1,7 @@
+# Built tracks: rebuild them from a .layout.json with build_track.bat
+output/
+
+# Python and Blender leftovers
+__pycache__/
+*.pyc
+*.blend1

@@ -1,0 +1,13 @@
+{
+  "format": "ac-track-layout",
+  "version": 1,
+  "name": "Banked Oval",
+  "author": "",
+  "settings": { "roadWidth": 16, "runoff": 10, "kerbs": false, "gravel": false, "pitBoxes": 16, "pitSide": "auto", "startPos": 0.1 },
+  "points": [
+    { "x": -300, "y": -150 }, { "x": 0, "y": -150 }, { "x": 300, "y": -150 },
+    { "x": 406, "y": -106, "bank": 12 }, { "x": 450, "y": 0, "bank": 14 }, { "x": 406, "y": 106, "bank": 12 },
+    { "x": 300, "y": 150 }, { "x": 0, "y": 150 }, { "x": -300, "y": 150 },
+    { "x": -406, "y": 106, "bank": 12 }, { "x": -450, "y": 0, "bank": 14 }, { "x": -406, "y": -106, "bank": 12 }
+  ]
+}

@@ -1,0 +1,139 @@
+OK       daytona_oval: 4016 m vs 4023 m (-0.2%), 46 pts, dev max 0.99 m; climb 4 m, steepest 3%; relation 5254137 (Daytona International Speedway - Oval); direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 31, 31; front 18, others 3
+           - 1 points added to follow the hills
+OK       talladega: 4307 m vs 4281 m (+0.6%), 49 pts, dev max 0.87 m; climb 4 m, steepest 5%; raceway network; direction OSM oneway; start middle of front straight + 381 m; pits left
+           - 2 turns banked 33, 33; front 16.5, others 2
+OK       atlanta: 2409 m vs 2478 m (-2.8%), 33 pts, dev max 0.94 m; climb 10 m, steepest 5%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 28, 28; front 5, others 5
+OK       phoenix: 1657 m vs 1645 m (+0.7%), 29 pts, dev max 0.79 m; climb 11 m, steepest 3%; raceway network; direction catalogue; start middle of front straight; pits left
+           - 2 turns banked 11, 9; front 3, others 3
+OK       las_vegas: 2474 m vs 2414 m (+2.5%), 34 pts, dev max 1.09 m; climb 4 m, steepest 2%; relation 21201768 (Las Vegas Motor Speedway); direction OSM oneway; start OSM start/finish node; pits left
+           - 2 turns banked 20, 20; front 9, others 3
+OK       homestead: 2413 m vs 2414 m (-0.0%), 31 pts, dev max 0.87 m; climb 2 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits auto
+           - no pit lane in OSM: start line on the longest straight, pit side automatic
+           - 2 turns banked 20, 20; front 4, others 4
+OK       martinsville: 823 m vs 847 m (-2.8%), 22 pts, dev max 0.81 m; climb 2 m, steepest 4%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 12, 12; front 0, others 0
+OK       darlington: 2099 m vs 2198 m (-4.5%), 29 pts, dev max 1.49 m; climb 3 m, steepest 4%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 25, 23; front 3, others 2
+OK       bristol: 844 m vs 858 m (-1.6%), 22 pts, dev max 0.96 m; climb 2 m, steepest 4%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 26, 26; front 7, others 7
+OK       texas: 2379 m vs 2414 m (-1.4%), 35 pts, dev max 1.44 m; climb 9 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 20, 24; front 8, others 5
+OK       kansas: 2474 m vs 2414 m (+2.5%), 35 pts, dev max 0.75 m; climb 4 m, steepest 2%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 18.5, 18.5; front 10, others 5
+OK       charlotte_oval: 2361 m vs 2414 m (-2.2%), 31 pts, dev max 1.68 m; climb 8 m, steepest 4%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 24, 24; front 5, others 5
+OK       nashville_ss: 2113 m vs 2145 m (-1.5%), 30 pts, dev max 1.44 m; climb 3 m, steepest 2%; relation 20393904 (Nashville Superspeedway); direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 14, 14; front 9, others 6
+OK       michigan: 3233 m vs 3219 m (+0.4%), 36 pts, dev max 0.97 m; climb 4 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 18, 18; front 12, others 5
+OK       pocono: 4053 m vs 4023 m (+0.7%), 43 pts, dev max 1.17 m; climb 5 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 3 turns banked 14, 8, 6; front 0, others 0
+OK       dover: 1659 m vs 1609 m (+3.1%), 28 pts, dev max 0.88 m; climb 3 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 24, 24; front 9, others 9
+OK       indy_oval: 4067 m vs 4023 m (+1.1%), 42 pts, dev max 1.38 m; climb 4 m, steepest 2%; relation 20573682 (Indianapolis Motor Speedway 2026); direction OSM oneway; start middle of front straight; pits left
+           - 4 turns banked 9.2, 9.2, 9.2, 9.2; front 0, others 0
+OK       iowa: 1428 m vs 1408 m (+1.4%), 29 pts, dev max 0.89 m; climb 2 m, steepest 2%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 13, 13; front 10, others 4
+OK       richmond: 1176 m vs 1207 m (-2.6%), 26 pts, dev max 0.84 m; climb 2 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 14, 14; front 8, others 2
+OK       new_hampshire: 1664 m vs 1703 m (-2.3%), 28 pts, dev max 0.93 m; climb 6 m, steepest 2%; relation 10625001 (New Hampshire Motor Speedway Oval); direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 6, 6; front 1, others 1
+OK       gateway: 2036 m vs 2012 m (+1.2%), 27 pts, dev max 1.37 m; climb 1 m, steepest 1%; relation 20448916 (World Wide Technology Raceway); direction OSM oneway; start middle of front straight; pits left
+           - 2 turns banked 11, 9; front 3, others 3
+           - elevation bridged over 1% of the lap (tunnels/bridges)
+OK       north_wilkesboro: 1001 m vs 1006 m (-0.5%), 20 pts, dev max 0.96 m; climb 4 m, steepest 3%; raceway network; direction OSM oneway; start middle of front straight; pits left
+           - OSM trace was 846 m: scaled by 1.19 to the official length
+           - 2 turns banked 14, 14; front 3, others 3
+OK       bowman_gray: 384 m vs 402 m (-4.5%), 16 pts, dev max 0.56 m; climb 0 m, steepest 0%; raceway network; direction OSM oneway; start middle of front straight; pits auto
+           - no pit lane in OSM: start line on the longest straight, pit side automatic
+           - 2 turns banked 0, 0; front 0, others 0
+OK       milwaukee: 1659 m vs 1633 m (+1.6%), 28 pts, dev max 0.78 m; climb 1 m, steepest 2%; raceway network; direction catalogue; start middle of front straight; pits left
+           - 2 turns banked 9.25, 9.25; front 2.5, others 2.5
+OK       charlotte_roval: 3661 m vs 3669 m (-0.2%), 86 pts, dev max 1.10 m; climb 9 m, steepest 7%; raceway network; direction OSM oneway; start pit lane; pits right
+           - banking copied from charlotte_oval on 58% of the lap
+OK       daytona_rc: 5705 m vs 5729 m (-0.4%), 111 pts, dev max 1.00 m; climb 6 m, steepest 9%; relation 5254136 (Daytona International Speedway Road Course); direction OSM oneway; start pit lane; pits left
+           - banking copied from daytona_oval on 51% of the lap
+OK       indy_rc: 3908 m vs 3925 m (-0.4%), 76 pts, dev max 0.97 m; climb 4 m, steepest 3%; relation 20573734 (Indianapolis RC 2026); direction OSM oneway; start pit lane; pits right
+           - banking copied from indy_oval on 3% of the lap
+OK       cota: 5483 m vs 5513 m (-0.5%), 112 pts, dev max 0.99 m; climb 29 m, steepest 11%; relation 6537729 (Circuit of the Americas); direction OSM oneway; start OSM start/finish node; pits left
+OK       sonoma: 3155 m vs 3203 m (-1.5%), 69 pts, dev max 0.95 m; climb 48 m, steepest 16%; raceway network; direction OSM oneway; start pit lane; pits left
+           - 1 points added to follow the hills
+OK       watkins_glen_short: 3936 m vs 3943 m (-0.2%), 71 pts, dev max 0.87 m; climb 41 m, steepest 10%; relation 4872326 (Watkins Glen Short Course); direction OSM oneway; start pit lane; pits right
+OK       watkins_glen_full: 5472 m vs 5472 m (+0.0%), 104 pts, dev max 0.92 m; climb 44 m, steepest 10%; relation 4872324 (Watkins Glen Long Course); direction OSM oneway; start pit lane; pits right
+OK       mexico: 4306 m vs 4304 m (+0.0%), 88 pts, dev max 0.94 m; climb 0 m, steepest 0%; relation 16251935 (Mexican Grand Prix); direction OSM oneway; start OSM start/finish node; pits right
+           - elevation: kept flat (terrain data unreliable here)
+OK       road_america: 6495 m vs 6515 m (-0.3%), 109 pts, dev max 0.97 m; climb 55 m, steepest 16%; raceway network; direction OSM oneway; start pit lane; pits right
+           - 4 points added to follow the hills
+OK       barber: 3717 m vs 3830 m (-3.0%), 74 pts, dev max 0.95 m; climb 21 m, steepest 11%; raceway network; direction OSM oneway; start pit lane; pits left
+OK       mid_ohio: 3613 m vs 3634 m (-0.6%), 78 pts, dev max 1.00 m; climb 41 m, steepest 9%; raceway network; direction OSM oneway; start pit lane; pits left
+OK       laguna_seca: 3598 m vs 3602 m (-0.1%), 77 pts, dev max 0.92 m; climb 57 m, steepest 13%; raceway network; direction OSM oneway; start pit lane; pits left
+           - 3 points added to follow the hills
+OK       portland: 3140 m vs 3161 m (-0.7%), 65 pts, dev max 0.90 m; climb 3 m, steepest 1%; raceway network; direction OSM oneway; start pit lane; pits right
+OK       thermal: 4978 m vs 4936 m (+0.9%), 110 pts, dev max 0.96 m; climb 3 m, steepest 0%; raceway network; direction OSM oneway; start pit lane; pits right
+           - OSM says anticlockwise, catalogue says cw: using OSM
+OK       sebring: 5865 m vs 6019 m (-2.6%), 100 pts, dev max 0.98 m; climb 2 m, steepest 1%; relation 7003292 (Sebring International Raceway); direction OSM oneway; start pit lane; pits right
+OK       road_atlanta: 4090 m vs 4088 m (+0.0%), 70 pts, dev max 0.97 m; climb 36 m, steepest 16%; raceway network; direction OSM oneway; start pit lane; pits right
+           - 2 points added to follow the hills
+OK       vir: 5262 m vs 5263 m (-0.0%), 102 pts, dev max 0.93 m; climb 39 m, steepest 9%; raceway network; direction OSM oneway; start pit lane; pits right
+           - 5 points added to follow the hills
+OK       ctmp: 3943 m vs 3957 m (-0.4%), 83 pts, dev max 0.89 m; climb 46 m, steepest 15%; raceway network; direction OSM oneway; start pit lane; pits right
+           - 6 points added to follow the hills
+OK       lime_rock: 2404 m vs 2462 m (-2.4%), 49 pts, dev max 0.92 m; climb 15 m, steepest 11%; raceway network; direction OSM oneway; start pit lane; pits right
+OK       bahrain: 5391 m vs 5412 m (-0.4%), 99 pts, dev max 0.94 m; climb 20 m, steepest 4%; relation 284538 (حلبة البحرين الدولية); direction OSM oneway; start pit lane; pits right
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       shanghai: 5433 m vs 5451 m (-0.3%), 101 pts, dev max 0.99 m; climb 4 m, steepest 2%; relation 2094941 (Shanghai International Circuit); direction catalogue; start OSM start/finish node; pits right
+           - road narrowed from 13 to 11 m (closest sections 39 m apart, tightest radius 8 m)
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       imola: 4902 m vs 4909 m (-0.1%), 94 pts, dev max 0.95 m; climb 34 m, steepest 11%; relation 9291096 (Autodromo Internazionale Enzo e Dino Ferrari); direction OSM oneway; start OSM start/finish node; pits right
+           - 1 points added to follow the hills
+OK       barcelona: 4659 m vs 4657 m (+0.0%), 98 pts, dev max 0.99 m; climb 32 m, steepest 9%; relation 284540 (Circuit de Catalunya GP); direction OSM oneway; start OSM start/finish node; pits right
+           - 5 points added to follow the hills
+OK       red_bull_ring: 4306 m vs 4318 m (-0.3%), 82 pts, dev max 0.99 m; climb 69 m, steepest 15%; relation 5309181 (Red Bull Ring); direction OSM oneway; start OSM start/finish node; pits right
+           - 2 points added to follow the hills
+OK       silverstone: 5879 m vs 5891 m (-0.2%), 108 pts, dev max 1.00 m; climb 13 m, steepest 3%; relation 51160 (Silverstone Grand Prix); direction OSM oneway; start pit lane; pits right
+           - loop search capped for relation 51160 (Silverstone Grand Prix)
+           - 1 points added to follow the hills
+OK       spa: 6988 m vs 7004 m (-0.2%), 131 pts, dev max 0.98 m; climb 106 m, steepest 21%; relation 284560 (Circuit de Spa Francorchamps); direction OSM oneway; start OSM start/finish node; pits right
+           - 6 points added to follow the hills
+OK       hungaroring: 4364 m vs 4381 m (-0.4%), 90 pts, dev max 0.92 m; climb 39 m, steepest 9%; relation 284557 (Hungaroring); direction OSM oneway; start pit lane; pits right
+           - 2 points added to follow the hills
+OK       zandvoort: 4250 m vs 4259 m (-0.2%), 89 pts, dev max 0.99 m; climb 5 m, steepest 3%; relation 13545573 (Grand Prix Formule 1 van Nederland); direction OSM oneway; start OSM start/finish node; pits right
+OK       monza: 5784 m vs 5793 m (-0.2%), 89 pts, dev max 0.98 m; climb 18 m, steepest 7%; relation 284565 (Autodromo Nazionale di Monza); direction OSM oneway; start OSM start/finish node; pits right
+           - elevation bridged over 0% of the lap (tunnels/bridges)
+           - 4 points added to follow the hills
+OK       interlagos: 4306 m vs 4309 m (-0.1%), 89 pts, dev max 0.96 m; climb 41 m, steepest 8%; relation 6781071 (Autódromo José Carlos Pace); direction OSM oneway; start OSM start/finish node; pits left
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       lusail: 5399 m vs 5419 m (-0.4%), 117 pts, dev max 0.97 m; climb 7 m, steepest 3%; relation 21297662 (Lusail Grand Prix Circuit); direction OSM oneway; start pit lane; pits left
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       yas_marina: 5282 m vs 5281 m (+0.0%), 101 pts, dev max 0.92 m; climb 6 m, steepest 3%; relation 11378665 (Yas Marina Circuit); direction OSM oneway; start pit lane; pits left
+           - elevation bridged over 1% of the lap (tunnels/bridges)
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       monaco: 3300 m vs 3337 m (-1.1%), 93 pts, dev max 0.99 m; climb 49 m, steepest 10%; relation 148194 (Circuit de Monaco); direction catalogue; start OSM start/finish node; pits right
+           - road narrowed from 11 to 10 m (closest sections 14 m apart, tightest radius 8 m)
+           - elevation bridged over 11% of the lap (tunnels/bridges)
+OK       baku: 5972 m vs 6003 m (-0.5%), 102 pts, dev max 0.97 m; climb 32 m, steepest 9%; relation 11266687 (Baku City Circuit); direction catalogue; start OSM start/finish node; pits left
+           - road narrowed from 11 to 8 m (closest sections 10 m apart, tightest radius 10 m)
+           - elevation from SRTM (30 m): smoothed more heavily
+           - 3 points added to follow the hills
+OK       singapore: 4892 m vs 4940 m (-1.0%), 100 pts, dev max 0.94 m; climb 0 m, steepest 0%; relation 421263 (Marina Bay Street Circuit); direction catalogue; start OSM start/finish node; pits left
+           - elevation: kept flat (terrain data unreliable here)
+OK       jeddah: 6164 m vs 6174 m (-0.2%), 122 pts, dev max 0.97 m; climb 7 m, steepest 4%; raceway network; direction OSM oneway; start longest straight; pits auto
+           - no pit lane in OSM: start line on the longest straight, pit side automatic
+           - elevation bridged over 0% of the lap (tunnels/bridges)
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       las_vegas_strip: 6181 m vs 6201 m (-0.3%), 112 pts, dev max 1.18 m; climb 15 m, steepest 3%; relation 16696508 (Las Vegas Strip Circuit); direction catalogue; start OSM start/finish node; pits left
+OK       miami: 5399 m vs 5412 m (-0.2%), 98 pts, dev max 0.98 m; climb 1 m, steepest 0%; raceway network; direction OSM oneway; start pit lane; pits right
+OK       albert_park: 5299 m vs 5278 m (+0.4%), 102 pts, dev max 0.94 m; climb 7 m, steepest 2%; relation 280443 (Albert Park Circuit); direction catalogue; start OSM start/finish node; pits right
+           - elevation from SRTM (30 m): smoothed more heavily
+OK       montreal: 4360 m vs 4361 m (-0.0%), 88 pts, dev max 0.88 m; climb 8 m, steepest 2%; relation 284595 (Circuit Gilles Villeneuve); direction OSM oneway; start OSM start/finish node; pits right
+FAILED   long_beach: no loop within 8% of the official length in OpenStreetMap
+OK       st_petersburg: 2894 m vs 2897 m (-0.1%), 65 pts, dev max 0.89 m; climb 2 m, steepest 1%; relation 8668325 (Grand Prix of Saint Petersburg Raceway); direction OSM circuit relation; start pit lane; pits right
+FAILED   toronto: no loop within 8% of the official length in OpenStreetMap
+OK       detroit: 2637 m vs 2647 m (-0.4%), 57 pts, dev max 0.92 m; climb 7 m, steepest 4%; relation 17665938 (Detroit Grand Prix); direction catalogue; start OSM start/finish node; pits left
+           - elevation bridged over 1% of the lap (tunnels/bridges)
+OK       chicago: 3419 m vs 3541 m (-3.4%), 64 pts, dev max 0.97 m; climb 4 m, steepest 2%; relation 16546690 (Chicago Street Course); direction OSM circuit relation; start longest straight; pits auto
+           - no pit lane in OSM: start line on the longest straight, pit side automatic
+           - road narrowed from 11 to 8.5 m (closest sections 12 m apart, tightest radius 10 m)
+           - elevation bridged over 4% of the lap (tunnels/bridges)
