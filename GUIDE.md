@@ -69,6 +69,7 @@ The `.kn5` is Assetto Corsa's model format. Kunos' own editor makes it:
 3. The track should appear with its textures. If a surface looks white or black, open the **Materials** list, pick that material, set its shader to `ksPerPixel` and set `txDiffuse` to the matching PNG in the `texture` folder.
 4. From the **File** menu choose **Save kn5**, pick the **track** option (not car), and save it as
    `output\<id>\track\<id>\<id>.kn5`. The file name must match the folder name.
+   **Watch the save box:** it can open in the `fbx` folder with the FBX's own name filled in. Change the folder to `track\<id>` and the name to `<id>.kn5`, otherwise the new .kn5 replaces the FBX and the game keeps the old track. If that happens anyway, `install_track.bat` notices, moves the file to the right place and tells you.
 
 > Claude hasn't been able to click through ksEditor itself, so the menu wording may differ slightly. If anything doesn't match, describe what you see.
 
@@ -82,6 +83,7 @@ The `.kn5` is Assetto Corsa's model format. Kunos' own editor makes it:
 
 | Problem | Fix |
 |---|---|
+| Track didn't change after reinstalling | The game only reads the `.kn5`. Open the new FBX in ksEditor and save the `.kn5` again into `output\<id>\track\<id>\`, then run `install_track.bat`. Its window says if it skipped a track and why. |
 | Car starts facing backwards | Rebuild with the spawn points flipped: run `build_track.bat` from a terminal with `--flip-spawns` after the layout path, then redo steps 3–4. |
 | Car falls through the world | The physical objects must keep their names (`1ROAD`, `2GRASS`, `1KERB`...). Don't rename them in ksEditor. |
 | Track missing in Content Manager | The `.kn5` must be named exactly like its folder, e.g. `starter_circuit\starter_circuit.kn5`. |
@@ -90,6 +92,9 @@ The `.kn5` is Assetto Corsa's model format. Kunos' own editor makes it:
 ## Changing the track later
 
 Edit the layout in the designer → **Save layout** → drag it onto `build_track.bat` → load the FBX in ksEditor again and save over the old `.kn5` → `install_track.bat`.
+
+- If the old layout file is still in Downloads, your browser saves the new one with `(1)` in its name. Drag the newest file onto `build_track.bat`.
+- Every rebuild needs the ksEditor step again, because the game only reads the `.kn5`. `install_track.bat` skips any track whose `.kn5` is older than its last build and tells you why.
 
 ## Saving your work to GitHub
 
