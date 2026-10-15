@@ -268,10 +268,10 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
         <div class="row"><label for="bankSmoothLen">Smoothing distance</label><span class="val" id="bankSmoothLenV"></span>
           <input type="range" id="bankSmoothLen" min="20" max="400" step="10"></div>
       </div>
-      <div class="row"><label for="runoff">Outside run-off (grass to wall)</label><span class="val" id="runoffV"></span>
-        <input type="range" id="runoff" min="1" max="40" step="0.5"></div>
+      <div class="row"><label for="runoff">Outside run-off (road edge to wall)</label><span class="val" id="runoffV"></span>
+        <input type="range" id="runoff" min="0" max="40" step="0.1"></div>
       <div class="row"><label for="runoffIn">Infield run-off</label><span class="val" id="runoffInV"></span>
-        <input type="range" id="runoffIn" min="1" max="80" step="0.5"></div>
+        <input type="range" id="runoffIn" min="0" max="80" step="0.1"></div>
       <div class="row"><label for="wallHeight">Wall height</label><span class="val" id="wallHeightV"></span>
         <input type="range" id="wallHeight" min="0.5" max="10" step="0.1"></div>
       <div class="toggle"><label for="kerbs">Kerbs on corners</label><input type="checkbox" id="kerbs"></div>
@@ -356,7 +356,7 @@ const STORE_KEY = 'ac-track-designer-v1';
 // bankSmooth*: optional smoothing of the banking along the lap (see smoothBanking)
 const DEFAULTS = {
   roadWidth: 12, runoff: 15, runoffIn: 15, kerbs: true, gravel: true, pitBoxes: 12, pitSide: 'auto', startPos: 0.08, planWidth: true,
-  bankSmooth: false, bankSmoothMode: 'avg', bankSmoothLen: 100, wallHeight: 1.2,
+  bankSmooth: false, bankSmoothMode: 'avg', bankSmoothLen: 100, wallHeight: 1.2, runoffFromEdge: true,
 };
 const MAX_PITS = 60;
 // Big fields (over 24 cars) get two rows of pit boxes and a tighter grid, so the pit area stays a sensible length.
@@ -365,10 +365,17 @@ function pitPlan(n) {
   const rows = n > 24 ? 2 : 1;
   return { rows, perRow: rows === 2 ? Math.ceil(n / 2 * 1.2) : n, gridGap: n > 24 ? 5 : 8 };
 }
-// fill in defaults; layouts saved before the infield run-off setting existed use the same run-off on both sides
+// fill in defaults; layouts saved before the infield run-off setting existed use the same run-off on both sides.
+// Run-off is measured from the road edge to the wall. Older layouts (and the real-track library) measured it from the
+// outside of the kerb strip, so they get the strip added and their walls stay where they were.
 function normSettings(s) {
   const r = { ...DEFAULTS, ...s };
+  if (s && s.runoffFromEdge === undefined) {
+    if (s.runoff !== undefined) r.runoff = s.runoff + KERB_W;
+    if (s.runoffIn !== undefined) r.runoffIn = s.runoffIn + KERB_W;
+  }
   if (!s || s.runoffIn === undefined) r.runoffIn = r.runoff;
+  r.runoffFromEdge = true;
   return r;
 }
 
@@ -762,8 +769,10 @@ function compute() {
   // ---- corridor (distance from centerline to the wall on each side) ----
   const half = S.roadWidth / 2;
   const infield = dir === 'clockwise' ? 1 : 0;              // side index of the infield (0 = left, 1 = right)
-  const Ddes = [0, 1].map((si) => half + KERB_W + (si === infield ? S.runoffIn : S.runoff));
-  const Dmin = half + KERB_W + 1.5, pitWant = half + APRON_W + 3;
+  const Ddes = [0, 1].map((si) => half + (si === infield ? S.runoffIn : S.runoff));
+  // where other parts of the track or a tight inside corner squeeze the corridor, walls stop 2.7 m from the road,
+  // or at the run-off asked for if that's closer (0 = wall right at the road edge)
+  const Dmin = Ddes.map((d) => Math.min(half + KERB_W + 1.5, d)), pitWant = half + APRON_W + 3;
   const pitSi = S.pitSide === 'left' ? 0 : S.pitSide === 'right' ? 1 : 1 - infield;
   const plan = pitPlan(S.pitBoxes);
   const pitBack = 25 + plan.perRow * 10, pitFwd = 25;
@@ -773,8 +782,11 @@ function compute() {
   const want = [new Float64Array(N), new Float64Array(N)];
   const innerRaw = [new Float64Array(N).fill(Infinity), new Float64Array(N).fill(Infinity)];
   const prox = [new Float64Array(N).fill(Infinity), new Float64Array(N).fill(Infinity)];
+  // the wall steps out for the pit area over about 24 m (the smoothing below), so it starts stepping out before the
+  // pit area and every pit box gets the full apron, even with no run-off
+  const W2 = Math.round(12 / h), pitWide = dilate(inPit, 2 * W2, 2 * W2);
   for (let i = 0; i < N; i++) {
-    for (let si = 0; si < 2; si++) want[si][i] = (si === pitSi && inPit[i]) ? Math.max(Ddes[si], pitWant) : Ddes[si];
+    for (let si = 0; si < 2; si++) want[si][i] = (si === pitSi && pitWide[i]) ? Math.max(Ddes[si], pitWant) : Ddes[si];
     const r = 0.8 / Math.max(Math.abs(kap[i]), 1e-9);
     if (kap[i] > 0) innerRaw[0][i] = r; else innerRaw[1][i] = r;
   }
@@ -802,10 +814,9 @@ function compute() {
       }
     }
   }
-  const W2 = Math.round(12 / h);
   const D = [0, 1].map((si) => {
     const a = new Float64Array(N);
-    for (let i = 0; i < N; i++) a[i] = Math.max(Dmin, Math.min(want[si][i], inner[si][i], prox[si][i]));
+    for (let i = 0; i < N; i++) a[i] = Math.max(Dmin[si], Math.min(want[si][i], inner[si][i], prox[si][i]));
     return movingAvg(movingMin(a, W2), W2);
   });
 
@@ -821,9 +832,10 @@ function compute() {
     grav[si] = dilate(grav[si], Math.round(15 / h), Math.round(40 / h));
     for (let i = 0; i < N; i++) {
       const isPit = si === pitSi && inPit[i];
-      if (isPit) kerb[si][i] = 0;
+      if (isPit || D[si][i] - half < KERB_W + 0.5) kerb[si][i] = 0;      // no room for a kerb against a close wall
       if (isPit || D[si][i] - half - KERB_W < 8) grav[si][i] = 0;
     }
+    removeShort(kerb[si], Math.round(12 / h));
     removeShort(grav[si], Math.round(20 / h));
   }
   const flags = new Uint8Array(N);

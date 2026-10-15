@@ -24,7 +24,8 @@ SPACING = 1.0       # centerline sample spacing (m)
 # planWidth: road width measured from above, so banked sections get a wider tilted surface (see build_track.Track)
 # bankSmooth*: optional smoothing of the banking along the lap (see smooth_banking)
 DEFAULTS = dict(roadWidth=12.0, runoff=15.0, runoffIn=15.0, kerbs=True, gravel=True, pitBoxes=12, pitSide="auto", startPos=0.08,
-                planWidth=True, bankSmooth=False, bankSmoothMode="avg", bankSmoothLen=100.0, wallHeight=1.2)
+                planWidth=True, bankSmooth=False, bankSmoothMode="avg", bankSmoothLen=100.0, wallHeight=1.2,
+                runoffFromEdge=True)
 
 
 MAX_PITS = 60
@@ -38,12 +39,19 @@ def pit_plan(n):
 
 
 def norm_settings(s):
-    """Fill in defaults; layouts saved before the infield run-off setting existed use the same run-off on both sides."""
+    """Fill in defaults; layouts saved before the infield run-off setting existed use the same run-off on both sides.
+    Run-off is measured from the road edge to the wall; older layouts measured it from the outside of the kerb strip,
+    so they get the strip added and their walls stay where they were."""
     s = s or {}
     out = dict(DEFAULTS)
     out.update({k: v for k, v in s.items() if k in DEFAULTS})
+    if s and "runoffFromEdge" not in s:
+        for k in ("runoff", "runoffIn"):
+            if k in s:
+                out[k] = s[k] + KERB_W
     if "runoffIn" not in s:
         out["runoffIn"] = out["runoff"]
+    out["runoffFromEdge"] = True
     return out
 
 FLAG_KERB = (1, 2)      # (left, right)
@@ -285,15 +293,19 @@ def compute(doc):
     # ---- corridor ----
     half = S["roadWidth"] / 2
     infield = 1 if direction == "clockwise" else 0
-    d_des = [half + KERB_W + (S["runoffIn"] if si == infield else S["runoff"]) for si in (0, 1)]
-    d_min = half + KERB_W + 1.5
+    d_des = [half + (S["runoffIn"] if si == infield else S["runoff"]) for si in (0, 1)]
+    # squeezed walls stop 2.7 m from the road, or at the run-off asked for if closer (0 = wall at the road edge)
+    d_min = [min(half + KERB_W + 1.5, d) for d in d_des]
     pit_want = half + APRON_W + 3
     pit_si = 0 if S["pitSide"] == "left" else 1 if S["pitSide"] == "right" else 1 - infield
     plan = pit_plan(S["pitBoxes"])
     pit_back, pit_fwd = 25 + plan["perRow"] * 10, 25
     in_pit = [1 if (i * h <= pit_fwd or i * h >= m["L"] - pit_back) else 0 for i in range(N)]
     max_want = max(d_des[0], d_des[1], pit_want)
-    want = [[(max(d_des[si], pit_want) if (si == pit_si and in_pit[i]) else d_des[si]) for i in range(N)] for si in (0, 1)]
+    # the wall starts stepping out before the pit area, so every pit box gets the full apron (see the designer)
+    w2 = round(12 / h)
+    pit_wide = dilate(in_pit, 2 * w2, 2 * w2)
+    want = [[(max(d_des[si], pit_want) if (si == pit_si and pit_wide[i]) else d_des[si]) for i in range(N)] for si in (0, 1)]
     inner_raw = [[math.inf] * N, [math.inf] * N]
     for i in range(N):
         r = 0.8 / max(abs(kap[i]), 1e-9)
@@ -323,10 +335,9 @@ def compute(doc):
                     lim = math.sqrt(d2) / 2 - 0.5
                     if lim < prox[si][i]:
                         prox[si][i] = lim
-    w2 = round(12 / h)
     D = []
     for si in (0, 1):
-        a = [max(d_min, min(want[si][i], inner[si][i], prox[si][i])) for i in range(N)]
+        a = [max(d_min[si], min(want[si][i], inner[si][i], prox[si][i])) for i in range(N)]
         D.append(moving_avg(moving_min(a, w2), w2))
 
     kerb = [[0] * N, [0] * N]
@@ -342,10 +353,11 @@ def compute(doc):
         grav[si] = dilate(grav[si], round(15 / h), round(40 / h))
         for i in range(N):
             is_pit = si == pit_si and in_pit[i]
-            if is_pit:
+            if is_pit or D[si][i] - half < KERB_W + 0.5:      # no room for a kerb against a close wall
                 kerb[si][i] = 0
             if is_pit or D[si][i] - half - KERB_W < 8:
                 grav[si][i] = 0
+        remove_short(kerb[si], round(12 / h))
         remove_short(grav[si], round(20 / h))
     flags = []
     for i in range(N):

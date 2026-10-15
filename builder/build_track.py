@@ -141,7 +141,7 @@ class Track:
                 for i in bad:
                     for k in range(-12, 13):
                         j = (i + k) % self.N
-                        D[j] = max(d_min, D[j] * 0.92)
+                        D[j] = min(D[j], max(d_min, D[j] * 0.92))     # only ever pull in (walls may hug the road)
             self.D[si] = D
 
     # sample index for a (possibly wrapped) row
@@ -261,29 +261,34 @@ def build_offroad(T):
         pit = (T.flags & layout_core.FLAG_PIT[si]) > 0
         kerb = ((T.flags & layout_core.FLAG_KERB[si]) > 0) & ~pit
         grav = ((T.flags & layout_core.FLAG_GRAVEL[si]) > 0) & ~pit
-        buf_edge = np.minimum(E + kb + BUFFER, D - 0.5)
-        aw = np.clip(np.minimum(T.apron_w, D - E - 1.0), 2.0, None)
+        # with little or no run-off the wall cuts the strips short (run-off 0: the wall stands on the road edge)
+        sh = np.minimum(E + kb, D)                                   # end of the kerb / grass shoulder
+        buf_edge = np.maximum(np.minimum(E + kb + BUFFER, D - 0.5), sh)
+        aw = np.minimum(np.clip(np.minimum(T.apron_w, D - E - 1.0), 2.0, None), np.maximum(D - E, 0.0))
+        # strips are only built where they have some width, so no flat zero-area triangles end up in the physics
+        has = lambda a, b: (b - a) > 0.02                             # noqa: E731
 
         # shoulder: kerb or grass
-        for start, ln in side_runs(kerb):
+        for start, ln in side_runs(kerb & has(E, sh)):
             taper_rows = max(1, 2.0 / T.h)
 
             def hump(rr, a, i, ln=ln):
                 t = min(1.0, rr / taper_rows, (ln - rr) / taper_rows)
                 return KERB_HUMP * max(0.0, t) * math.sin(math.pi * (a - E[i]) / kb)
-            strip(T, "KERB", "kerb", sg, start, ln, lambda i: (E[i], E[i] + kb / 2, E[i] + kb), "kerb", hump)
-        for start, ln in side_runs(~kerb & ~pit):
-            strip(T, "GRASS", "grass", sg, start, ln, lambda i: (E[i], E[i] + kb / 2, E[i] + kb), "grass")
+            strip(T, "KERB", "kerb", sg, start, ln, lambda i: (E[i], (E[i] + sh[i]) / 2, sh[i]), "kerb", hump)
+        for start, ln in side_runs(~kerb & ~pit & has(E, sh)):
+            strip(T, "GRASS", "grass", sg, start, ln, lambda i: (E[i], (E[i] + sh[i]) / 2, sh[i]), "grass")
         # buffer grass, then gravel trap or grass out to the wall
-        for start, ln in side_runs(~pit):
-            strip(T, "GRASS", "grass", sg, start, ln, lambda i: (E[i] + kb, buf_edge[i]), "grass")
+        for start, ln in side_runs(~pit & has(sh, buf_edge)):
+            strip(T, "GRASS", "grass", sg, start, ln, lambda i: (sh[i], buf_edge[i]), "grass")
         for start, ln in side_runs(grav):
             strip(T, "SAND", "gravel", sg, start, ln, lambda i: (buf_edge[i], (buf_edge[i] + D[i]) / 2, D[i]), "gravel")
-        for start, ln in side_runs(~grav & ~pit):
+        for start, ln in side_runs(~grav & ~pit & has(buf_edge, D)):
             strip(T, "GRASS", "grass", sg, start, ln, lambda i: (buf_edge[i], D[i]), "grass")
         # pit apron (driveable concrete, physically ROAD) and grass behind it
         for start, ln in side_runs(pit):
             strip(T, "ROAD", "concrete", sg, start, ln, lambda i: (E[i], E[i] + aw[i] / 2, E[i] + aw[i]), "concrete")
+        for start, ln in side_runs(pit & has(E + aw, D)):
             strip(T, "GRASS", "grass", sg, start, ln, lambda i: (E[i] + aw[i], D[i]), "grass")
 
 
