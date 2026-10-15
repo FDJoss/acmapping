@@ -83,6 +83,20 @@ The `.kn5` is Assetto Corsa's model format. Kunos' own editor makes it:
 
 Edit the layout in the designer → **Save layout** → drag it onto `build_track.bat` → load the FBX in ksEditor again and save over the old `.kn5` → `install_track.bat`.
 
+## Saving your work to GitHub
+
+This folder is backed up to a private GitHub repository: https://github.com/FDJoss/acmapping. Built tracks in `output\` aren't uploaded (they're big, and `build_track.bat` can remake them from a layout).
+
+After changing something, open a terminal in this folder and run:
+
+```
+git add -A
+git commit -m "Say what you changed"
+git push
+```
+
+If Windows says `git` isn't recognised, close and reopen the terminal (or the Claude app) so it picks up the newly installed Git.
+
 ## Coming next
 
 - **AI line**: drive one clean lap with the recorder running, so AI cars can race and replay cameras work.
